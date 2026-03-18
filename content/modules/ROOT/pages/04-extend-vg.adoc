@@ -1,110 +1,90 @@
-= Extending the Volume Group
+= Verifying Available Space
 
 == The Plan
 
-Now that we've identified the problem (physical volume only using 1GB of a 5GB disk), let's fix it! We need to:
+Now that we've identified the problem (the LV is only 1GB but the VG has lots of free space), let's verify exactly how much space is available before we extend the logical volume.
 
-1. Extend the physical volume to use all available space on the disk
-2. Verify the volume group automatically picks up the additional space
+== Step 1: Check Current Volume Group Status
 
-== Step 1: Identify the Physical Volume and Disk
-
-First, let's confirm which disk and PV we're working with. Run `lsblk` again to identify the device name:
-
-[source,bash,role=execute]
-----
-lsblk
-----
-
-Look for the 5GB disk - it's probably `/dev/vdb`. Note the name of the physical volume (the PV partition on that disk).
-
-[TIP]
-====
-Your disk might be named `/dev/vdb`, `/dev/sdb`, or something similar depending on your system. Make sure you're looking at the 5GB disk, not the root disk!
-====
-
-== Step 2: Extend the Physical Volume
-
-The key command here is `pvresize`. This will extend the physical volume to use all available space on the disk.
-
-First, let's check the current PV size:
-
-[source,bash,role=execute]
-----
-pvs
-----
-
-Now extend the physical volume to use the full disk. Replace `/dev/vdb` with your actual device name if different:
-
-[source,bash,role=execute]
-----
-pvresize /dev/vdb
-----
-
-[NOTE]
-====
-The `pvresize` command will automatically detect the size of the underlying disk and expand the PV to match. You don't need to specify a size - it's smart enough to figure it out!
-====
-
-== Step 3: Verify the PV Extension
-
-Check that the physical volume is now using the full 5GB:
-
-[source,bash,role=execute]
-----
-pvs
-----
-
-You should now see the PV size is approximately 5GB instead of 1GB!
-
-For more detailed information:
-
-[source,bash,role=execute]
-----
-pvdisplay
-----
-
-== Step 4: Check the Volume Group
-
-Now let's verify that the volume group has automatically picked up the additional space:
+Let's look at exactly how much free space is in the volume group:
 
 [source,bash,role=execute]
 ----
 vgs
 ----
 
-You should see that the volume group now has significantly more free space available!
+Look at the "VFree" column - this shows how much unallocated space is available.
 
-For details:
+For more detailed information:
 
 [source,bash,role=execute]
 ----
 vgdisplay
 ----
 
-Look at the "Free PE / Size" line - you should now see about 4GB of free space available in the volume group.
-
-== Understanding What Happened
-
-When you extended the physical volume:
-
-1. The PV grew from ~1GB to ~5GB
-2. The volume group automatically recognized the additional PV space
-3. The VG now has ~4GB of free extents available for use
-4. The logical volume hasn't changed yet - we'll do that in the next step
-
 [IMPORTANT]
 ====
-Notice that this entire operation was done *online* - no downtime required! The filesystem is still mounted and (theoretically) the application could still be running. This is one of the huge advantages of LVM.
+Pay attention to these key fields:
+- *VG Size*: Total size of the volume group
+- *Alloc PE / Size*: How much is currently allocated to logical volumes
+- *Free PE / Size*: How much is available for expansion
+
+You should see several GB of free space ready to use!
+====
+
+== Step 2: Check Current Logical Volume Status
+
+Now let's see the current size of our `/app` logical volume:
+
+[source,bash,role=execute]
+----
+lvs
+----
+
+Look for the `app_lv` volume - it should be approximately 1GB.
+
+For more details:
+
+[source,bash,role=execute]
+----
+lvdisplay | grep -A 10 app_lv
+----
+
+== Step 3: Verify the Filesystem
+
+Let's confirm the current filesystem size:
+
+[source,bash,role=execute]
+----
+df -h /app
+----
+
+This should show approximately 1GB total size with nearly 100% used.
+
+== Understanding the Situation
+
+What we've confirmed:
+
+✓ The volume group has plenty of free space (several GB)
+
+✓ The logical volume for /app is only 1GB
+
+✓ The filesystem is full (100% used)
+
+✓ All we need to do is extend the LV to use the VG's free space!
+
+[NOTE]
+====
+This is a common scenario in production environments. Storage is provisioned with extra capacity in the VG, but individual logical volumes start small and grow as needed. This is one of the key advantages of LVM - flexible, online storage growth!
 ====
 
 [quote, Manager Scott]
 ____
-"Wait, you mean we had 4GB of space just sitting there unused this whole time? Well, obviously I knew that. I was just... testing you. Yeah, testing your troubleshooting skills. You passed! Now can you actually give that space to the application?"
+"See? I told you we had plenty of space! I provisioned the VG with extra capacity on purpose. That's called 'capacity planning' and it's something I learned from years of experience. Now you just need to allocate that space to the LV like I originally intended."
 ____
 
-*Narrator*: Sure, Scott. You were totally testing us.
+*Narrator*: Sure, Scott. This was definitely part of your master plan.
 
 == Next Steps
 
-The volume group now has plenty of free space, but the logical volume and filesystem don't know about it yet. In the next section, we'll extend the logical volume and resize the filesystem to actually make this space available to the application.
+Now that we've verified the available space, in the next section we'll extend the logical volume and resize the filesystem to actually make this space available to the application.

@@ -1,12 +1,15 @@
 #!/bin/bash
 # Module 05 - Solve: Extend the logical volume and filesystem
 
+# Find VG name
+VG_NAME=$(lvs --noheadings -o vg_name app_lv 2>/dev/null | tr -d ' ')
+
 echo "=== Solution for Module 05: Extending the Logical Volume and Filesystem ==="
 echo ""
 echo "1. Check current LV size:"
-echo "   lvs"
+echo "   lvs app_lv"
 echo ""
-lvs
+lvs app_lv
 echo ""
 echo "2. Check current filesystem size:"
 echo "   df -h /app"
@@ -14,9 +17,9 @@ echo ""
 df -h /app
 echo ""
 echo "3. Extend the logical volume to use all free space:"
-echo "   lvextend -l +100%FREE /dev/app_vg/app_lv"
+echo "   lvextend -l +100%FREE /dev/$VG_NAME/app_lv"
 echo ""
-lvextend -l +100%FREE /dev/app_vg/app_lv
+lvextend -l +100%FREE /dev/$VG_NAME/app_lv
 echo ""
 echo "4. Verify LV is now larger:"
 echo "   lvs"

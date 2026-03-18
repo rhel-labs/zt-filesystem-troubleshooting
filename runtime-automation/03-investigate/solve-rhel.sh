@@ -13,16 +13,12 @@ echo "   pvs"
 echo ""
 pvs
 echo ""
-echo "   pvdisplay"
-echo ""
-pvdisplay
-echo ""
 echo "3. Check volume groups:"
 echo "   vgs"
 echo ""
 vgs
 echo ""
-echo "   vgdisplay"
+echo "   vgdisplay (for details)"
 echo ""
 vgdisplay
 echo ""
@@ -31,12 +27,16 @@ echo "   lvs"
 echo ""
 lvs
 echo ""
-echo "   lvdisplay"
+echo "   lvdisplay (for app_lv details)"
 echo ""
-lvdisplay
+lvdisplay app_lv
 echo ""
 echo "=== Key Finding ==="
-echo "Notice that the PV only uses ~1GB of the 5GB /dev/vdb disk!"
-echo "The remaining ~4GB is unallocated and available for expansion."
+echo "Notice that:"
+echo "- The app_lv logical volume is only ~1GB"
+echo "- The volume group has several GB of FREE space"
+echo "- This free space is available for extending the LV!"
+echo ""
+echo "Scott created a small LV but left plenty of space in the VG."
 
 exit 0

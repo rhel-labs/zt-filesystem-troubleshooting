@@ -23,12 +23,13 @@ This command shows all block devices in a tree structure. Look carefully at the 
 
 [TIP]
 ====
-You should see two disks:
-- The root disk (usually around 20GB) containing the operating system
-- A second disk (around 5GB) that Scott provisioned for the application
+You should see a single 30GB disk containing:
+- The operating system partitions
+- LVM physical volumes
+- Multiple logical volumes including your `/app` volume
 ====
 
-Notice anything interesting? The 5GB disk should show a physical volume, but there might be unallocated space!
+Notice the LVM hierarchy - the disk contains physical volumes, which form volume groups, which contain logical volumes.
 
 == Step 2: Examine Physical Volumes
 
@@ -73,7 +74,7 @@ Look at the output carefully. You should see information about:
 - *Alloc PE*: How many extents are allocated
 - *Free PE*: How many extents are still available
 
-But wait... if the PV is only 1GB and the disk is 5GB, where's the rest of the space?
+Pay special attention to the "Free PE" value - this shows unallocated space in the volume group!
 ====
 
 == Step 4: Check Logical Volumes
@@ -96,30 +97,30 @@ lvdisplay
 
 By now, you should have discovered something important:
 
-✓ There's a 5GB physical disk (`/dev/vdb` or similar)
+✓ The `/app` logical volume is only 1GB in size
 
-✓ But the physical volume only uses about 1GB of it
+✓ The `/app` filesystem is completely full
 
-✓ The volume group is only 1GB in size
+✓ But the volume group has several GB of free space available!
 
-✓ The logical volume has used all available space in the VG
+✓ Scott only allocated 1GB to the app_lv when he could have used much more
 
-This means Scott created the disk correctly, but only configured 1GB of it for LVM! The remaining ~4GB is just sitting there, unallocated and unused.
+This means Scott created a tiny logical volume to "save space" but there's plenty of unallocated space just sitting in the volume group, ready to be used!
 
 [quote, Manager Scott (looking over your shoulder)]
 ____
-"What do you mean 'unallocated'? I created a 5GB disk! Are you saying the disk is defective? Should I call the vendor? I have their support number here somewhere..."
+"What do you mean 'free space in the VG'? I thought I used all the space efficiently! Are you saying I should have made the LV bigger? Well, obviously I knew that, I was just... testing the monitoring system. Yeah, that's it."
 ____
 
-*Narrator*: The disk is fine, Scott. The disk is perfectly fine.
+*Narrator*: Sure, Scott. You were definitely testing the monitoring system.
 
 == The Solution Path
 
 Now that you understand the problem, the solution is clear:
 
-1. Extend the physical volume to use all available space on the disk
-2. Extend the volume group (it will automatically pick up the new PV space)
-3. Extend the logical volume to use the newly available VG space
-4. Resize the filesystem to use the new LV space
+1. Extend the logical volume to use the free space in the volume group
+2. Resize the filesystem to use the new LV space
+
+That's it! No need to add disks or resize physical volumes - the space is already there in the VG, we just need to allocate it to the LV.
 
 Let's do this in the next sections!

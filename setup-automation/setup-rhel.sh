@@ -1,41 +1,65 @@
 #!/bin/bash
 # Setup script for the filesystem troubleshooting lab
-# This script configures the RHEL system with a deliberately misconfigured LVM setup
+# This script configures the RHEL system with a deliberately small LVM volume for /app
+# The system has a 30GB disk, but we'll create a 1GB /app volume, leaving ~9GB free for students to extend into
 
 set -e
 
-# Wait for the second disk to be available
-echo "Waiting for additional disk to be available..."
-timeout=60
-elapsed=0
-while [ ! -b /dev/vdb ] && [ $elapsed -lt $timeout ]; do
-    sleep 1
-    elapsed=$((elapsed + 1))
-done
+echo "=== Filesystem Troubleshooting Lab Setup ==="
 
-if [ ! -b /dev/vdb ]; then
-    echo "ERROR: /dev/vdb not found after ${timeout} seconds"
+# Find the root volume group (usually 'rhel' or similar)
+echo "Finding root volume group..."
+ROOT_VG=$(vgs --noheadings -o vg_name | head -1 | tr -d ' ')
+
+if [ -z "$ROOT_VG" ]; then
+    echo "ERROR: Could not find root volume group"
     exit 1
 fi
 
-echo "Found /dev/vdb"
+echo "Found root VG: $ROOT_VG"
 
-# Create a physical volume using only 1GB of the 5GB disk
-# This simulates Scott's "configuration mistake"
-echo "Creating physical volume with only 1GB of 5GB disk..."
-pvcreate --setphysicalvolumesize 1G /dev/vdb
+# Check available free space in the VG
+VG_FREE_GB=$(vgs --noheadings --units g -o vg_free $ROOT_VG | tr -d ' ' | sed 's/g//' | cut -d. -f1)
+echo "Available free space in VG: ${VG_FREE_GB}GB"
 
-# Create volume group
-echo "Creating volume group app_vg..."
-vgcreate app_vg /dev/vdb
+if [ "$VG_FREE_GB" -lt 5 ]; then
+    echo "WARNING: Less than 5GB free in VG. Need to make space..."
 
-# Create logical volume using most of the available space (leaving a tiny bit free)
-echo "Creating logical volume app_lv..."
-lvcreate -l 95%FREE -n app_lv app_vg
+    # Find the root LV
+    ROOT_LV=$(lvs --noheadings -o lv_name,vg_name | grep $ROOT_VG | grep -v swap | head -1 | awk '{print $1}')
+
+    if [ -z "$ROOT_LV" ]; then
+        echo "ERROR: Could not find root logical volume"
+        exit 1
+    fi
+
+    echo "Found root LV: $ROOT_LV"
+
+    # Reduce the root LV by 10GB to free up space
+    echo "Reducing root LV size by 10GB to make room for /app..."
+    echo "Note: This is Scott's 'optimization' - he made root smaller to save space!"
+
+    # First, shrink the filesystem (only works with ext4, not XFS)
+    # For XFS systems, we'll need to work with existing free space
+    FS_TYPE=$(lsblk -no FSTYPE /dev/$ROOT_VG/$ROOT_LV)
+
+    if [ "$FS_TYPE" = "xfs" ]; then
+        echo "Root filesystem is XFS - cannot shrink. Using existing free space instead."
+    else
+        # Shrink ext4 filesystem (would need to be unmounted, not practical for root)
+        echo "Filesystem shrinking not practical for mounted root. Using existing free space."
+    fi
+fi
+
+# Create a small logical volume for /app (only 1GB, simulating Scott's mistake)
+echo "Creating logical volume for /app with only 1GB..."
+echo "This simulates Scott's 'space-saving' configuration!"
+
+lvcreate -L 1G -n app_lv $ROOT_VG
 
 # Format with XFS filesystem
 echo "Creating XFS filesystem..."
-mkfs.xfs /dev/app_vg/app_lv
+mkfs.xfs /dev/$ROOT_VG/app_lv
 
 # Create mount point
 echo "Creating mount point /app..."
@@ -43,7 +67,7 @@ mkdir -p /app
 
 # Add to fstab for persistent mounting
 echo "Adding to /etc/fstab..."
-echo "/dev/app_vg/app_lv /app xfs defaults 0 0" >> /etc/fstab
+echo "/dev/$ROOT_VG/app_lv /app xfs defaults 0 0" >> /etc/fstab
 
 # Mount the filesystem
 echo "Mounting filesystem..."
@@ -82,6 +106,15 @@ EOF
 chown -R root:root /app
 chmod -R 755 /app
 
-echo "Setup complete!"
-echo "Filesystem is now nearly full as expected."
+echo ""
+echo "=== Setup Complete! ==="
+echo "Configuration Summary:"
+echo "- Volume Group: $ROOT_VG"
+echo "- /app Logical Volume: 1GB (nearly full)"
+echo "- Free space in VG for expansion:"
+vgs $ROOT_VG
+echo ""
+echo "Filesystem status:"
 df -h /app
+echo ""
+echo "Scott's misconfiguration is in place - /app is full but VG has free space!"

@@ -1,23 +1,32 @@
 #!/bin/bash
-# Module 04 - Validate that PV and VG have been extended
+# Module 04 - Validate that VG free space has been verified
 
-# Check that PV has been extended to use most of the 5GB disk
-PV_SIZE=$(pvs --noheadings --units g -o pv_size /dev/vdb | tr -d ' ' | sed 's/g//' | sed 's/\..*//')
+# Find the VG containing app_lv
+VG_NAME=$(lvs --noheadings -o vg_name app_lv 2>/dev/null | tr -d ' ')
 
-if [ "$PV_SIZE" -lt 4 ]; then
-    echo "FAIL: Physical volume has not been extended. Expected ~5GB, got ${PV_SIZE}GB"
-    echo "HINT: Run 'pvresize /dev/vdb' to extend the PV"
+if [ -z "$VG_NAME" ]; then
+    echo "FAIL: Could not find app_lv logical volume"
     exit 1
 fi
 
-# Check that VG has significant free space now
-VG_FREE=$(vgs --noheadings --units g -o vg_free app_vg | tr -d ' ' | sed 's/g//' | sed 's/\..*//')
+# Check that VG still has free space (hasn't been allocated to LV yet)
+VG_FREE=$(vgs --noheadings --units g -o vg_free $VG_NAME | tr -d ' ' | sed 's/g//' | sed 's/\..*//')
 
-if [ "$VG_FREE" -lt 3 ]; then
-    echo "FAIL: Volume group does not have enough free space. Expected ~4GB free, got ${VG_FREE}GB"
+if [ "$VG_FREE" -lt 2 ]; then
+    echo "FAIL: Volume group should still have free space. Found ${VG_FREE}GB"
     exit 1
 fi
 
-echo "PASS: Physical volume and volume group have been extended successfully!"
-echo "VG now has ${VG_FREE}GB of free space available."
+# Verify app_lv hasn't been extended yet
+LV_SIZE=$(lvs --noheadings --units g -o lv_size app_lv | tr -d ' ' | sed 's/g//' | sed 's/\..*//')
+
+if [ "$LV_SIZE" -gt 2 ]; then
+    echo "FAIL: Logical volume should not be extended yet (found ${LV_SIZE}GB)"
+    echo "Save the extension for the next module!"
+    exit 1
+fi
+
+echo "PASS: Volume group space verified!"
+echo "VG has ${VG_FREE}GB available for extending app_lv (currently ${LV_SIZE}GB)"
+echo "Ready to extend the logical volume!"
 exit 0

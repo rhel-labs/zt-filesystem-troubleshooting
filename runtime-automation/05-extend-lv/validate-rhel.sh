@@ -1,12 +1,15 @@
 #!/bin/bash
 # Module 05 - Validate that LV and filesystem have been extended
 
+# Find VG name
+VG_NAME=$(lvs --noheadings -o vg_name app_lv 2>/dev/null | tr -d ' ')
+
 # Check that LV has been extended
-LV_SIZE=$(lvs --noheadings --units g -o lv_size /dev/app_vg/app_lv | tr -d ' ' | sed 's/g//' | sed 's/\..*//')
+LV_SIZE=$(lvs --noheadings --units g -o lv_size app_lv | tr -d ' ' | sed 's/g//' | sed 's/\..*//')
 
 if [ "$LV_SIZE" -lt 4 ]; then
-    echo "FAIL: Logical volume has not been extended. Expected ~5GB, got ${LV_SIZE}GB"
-    echo "HINT: Run 'lvextend -l +100%FREE /dev/app_vg/app_lv'"
+    echo "FAIL: Logical volume has not been extended. Expected at least 4GB, got ${LV_SIZE}GB"
+    echo "HINT: Run 'lvextend -l +100%FREE /dev/$VG_NAME/app_lv'"
     exit 1
 fi
 

@@ -5,12 +5,9 @@ virtualmachines:
     bootloader: efi
     memory: "4G"
     cores: 2
-    image_size: "20G"
+    image_size: "30G"
     tags:
       - key: "AnsibleGroup"
         value: "bastions"
     networks:
       - default
-    disks:
-      - name: "rhel-app-disk"
-        size: "5G"

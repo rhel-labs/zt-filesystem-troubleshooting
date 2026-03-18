@@ -2,7 +2,7 @@
 
 == The Final Steps
 
-We've extended the physical volume and the volume group now has plenty of free space. Now we need to:
+We've verified that the volume group has plenty of free space available. Now we need to:
 
 1. Extend the logical volume to use the available VG space
 2. Resize the filesystem to use the new LV space
@@ -29,25 +29,27 @@ lvdisplay
 
 == Step 2: Extend the Logical Volume
 
-Now let's extend the logical volume to use all available space in the volume group. First, identify the LV path (should be something like `/dev/app_vg/app_lv`):
+Now let's extend the logical volume to use all available space in the volume group. First, identify the LV path:
 
 [source,bash,role=execute]
 ----
-lvdisplay | grep "LV Path"
+lvdisplay app_lv | grep "LV Path"
 ----
 
-Now extend it to use all available free space:
+The path will be something like `/dev/rhel/app_lv` (the volume group name may vary).
+
+Now extend it to use all available free space. Replace `rhel` with your actual VG name:
 
 [source,bash,role=execute]
 ----
-lvextend -l +100%FREE /dev/app_vg/app_lv
+lvextend -l +100%FREE /dev/rhel/app_lv
 ----
 
 Let's break down this command:
 
 * `lvextend` - Command to extend a logical volume
 * `-l +100%FREE` - Use 100% of the free space in the volume group
-* `/dev/app_vg/app_lv` - The path to the logical volume
+* `/dev/rhel/app_lv` - The path to the logical volume (VG name may vary)
 
 [TIP]
 ====
@@ -110,7 +112,7 @@ Let's confirm the filesystem now has the additional space:
 df -h /app
 ----
 
-You should now see that `/app` has significantly more available space - approximately 5GB total instead of 1GB!
+You should now see that `/app` has significantly more available space - several GB instead of just 1GB!
 
 == Step 5: Test Write Operations
 
@@ -143,11 +145,9 @@ Let's review what you did to solve this problem:
 
 ✓ *Investigated* the storage configuration using `lsblk`, `pvs`, `vgs`, and `lvs`
 
-✓ *Discovered* that only 1GB of a 5GB disk was being used
+✓ *Discovered* that the LV was only 1GB but the VG had several GB of free space
 
-✓ *Extended* the physical volume with `pvresize`
-
-✓ *Extended* the logical volume with `lvextend`
+✓ *Extended* the logical volume with `lvextend` to use the VG's free space
 
 ✓ *Resized* the filesystem with `xfs_growfs` (or `resize2fs`)
 
