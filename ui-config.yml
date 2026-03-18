@@ -1,0 +1,23 @@
+antora:
+  name: modules
+  dir: www
+  modules:
+    - name: 01-introduction
+      label: "Manager Scott's Emergency"
+      solveButton: false
+    - name: 02-identify
+      label: "Finding the Full Filesystem"
+      solveButton: true
+    - name: 03-investigate
+      label: "Investigating Disk Space"
+      solveButton: true
+    - name: 04-extend-vg
+      label: "Extending the Volume Group"
+      solveButton: true
+    - name: 05-extend-lv
+      label: "Extending the Logical Volume"
+      solveButton: true
+tabs:
+  - name: ">_rhel"
+    port: 443
+    path: /tty1

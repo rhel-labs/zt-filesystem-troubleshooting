@@ -1,0 +1,93 @@
+= Filesystem Troubleshooting and LVM Extension Lab
+
+== Overview
+
+This lab teaches students how to troubleshoot and resolve disk space issues using LVM (Logical Volume Manager) on Red Hat Enterprise Linux. Students will step into the role of a system administrator dealing with a classic scenario: a manager who "knows everything" has misconfigured storage, and now the application is failing.
+
+== Lab Scenario
+
+Manager Scott at Initech Corporation has deployed a customer portal application but only allocated 1GB of a 5GB disk to the LVM configuration. The application filesystem is now full, and students must identify the problem and extend the storage using LVM commands - all while the system remains online.
+
+== Learning Objectives
+
+After completing this lab, students will be able to:
+
+* Identify full filesystems using `df` and related tools
+* Analyze disk and LVM configuration with `lsblk`, `pvs`, `vgs`, and `lvs`
+* Extend physical volumes to utilize unallocated disk space
+* Extend volume groups and logical volumes
+* Resize filesystems (XFS/ext4) while mounted
+* Understand the LVM storage hierarchy (disks → PVs → VGs → LVs → filesystems)
+
+== Lab Structure
+
+=== Modules
+
+1. *Introduction* - Meet Manager Scott and learn about the problem
+2. *Identifying the Issue* - Use `df` to find the full filesystem
+3. *Investigating Disk Space* - Analyze the storage configuration with LVM tools
+4. *Extending the Volume Group* - Use `pvresize` to reclaim unallocated space
+5. *Extending the Logical Volume* - Use `lvextend` and filesystem resize tools
+
+=== Environment
+
+* One RHEL 9 VM with 2GB RAM, 2 vCPUs
+* 20GB root disk for the operating system
+* 5GB additional disk (`/dev/vdb`) for the application
+* Application filesystem mounted at `/app`
+
+=== Initial Configuration
+
+The setup script configures the system to simulate Manager Scott's mistake:
+
+* Creates a physical volume using only 1GB of the 5GB disk
+* Creates a volume group `app_vg`
+* Creates a logical volume `app_lv` using 95% of the VG
+* Formats with XFS filesystem
+* Mounts at `/app`
+* Fills the filesystem to ~100% capacity
+
+Students must then discover and fix this configuration.
+
+== Technical Implementation
+
+=== Setup Automation
+
+The `setup-automation/setup-rhel.sh` script:
+
+1. Waits for the 5GB disk to be available
+2. Creates a PV with `--setphysicalvolumesize 1G` to intentionally limit it
+3. Creates the VG and LV
+4. Formats and mounts the filesystem
+5. Fills it with dummy data to simulate the problem
+
+=== Runtime Automation
+
+Each module includes:
+
+* `setup-rhel.sh` - Prepares the module environment
+* `solve-rhel.sh` - Demonstrates the solution
+* `validate-rhel.sh` - Verifies student progress
+
+== Usage
+
+This lab is designed for the Red Hat Online Lab platform but can be adapted for other environments.
+
+== Humor Elements
+
+The lab includes "Manager Scott" as a comic foil who:
+
+* Takes credit for things he didn't do
+* Makes incorrect technical assumptions
+* Suggests inappropriate solutions (delete production data, buy new hardware)
+* Eventually claims the solution was his idea all along
+
+This makes the technical content more engaging while teaching real-world troubleshooting skills.
+
+== Author
+
+Nate Lager (nlager@redhat.com)
+
+== License
+
+This lab content follows Red Hat training materials licensing.

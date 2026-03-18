@@ -1,0 +1,2 @@
+[rhel]
+localhost ansible_connection=local

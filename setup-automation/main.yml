@@ -1,0 +1,11 @@
+---
+- name: Setup filesystem troubleshooting lab
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Run setup script
+      script: setup-rhel.sh
+      args:
+        creates: /app

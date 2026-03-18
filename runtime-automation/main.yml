@@ -1,0 +1,10 @@
+---
+- name: Runtime automation for filesystem troubleshooting lab
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Execute module script
+      script: "{{ lookup('env', 'MODULE_PATH') }}"
+      when: lookup('env', 'MODULE_PATH') is defined

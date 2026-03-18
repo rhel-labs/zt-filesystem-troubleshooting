@@ -1,0 +1,125 @@
+= Investigating Disk Space
+
+== Understanding the Storage Stack
+
+Before we can fix the problem, we need to understand how storage is configured on this system. In RHEL, storage typically follows this hierarchy:
+
+1. *Physical Disks* (or virtual disks in VMs)
+2. *Physical Volumes (PVs)* - Disks initialized for use with LVM
+3. *Volume Groups (VGs)* - Collections of physical volumes
+4. *Logical Volumes (LVs)* - Flexible partitions created from volume groups
+5. *Filesystems* - The formatted storage that applications use
+
+== Step 1: View Block Devices
+
+Let's start by looking at all the block devices (disks) on the system:
+
+[source,bash,role=execute]
+----
+lsblk
+----
+
+This command shows all block devices in a tree structure. Look carefully at the output.
+
+[TIP]
+====
+You should see two disks:
+- The root disk (usually around 20GB) containing the operating system
+- A second disk (around 5GB) that Scott provisioned for the application
+====
+
+Notice anything interesting? The 5GB disk should show a physical volume, but there might be unallocated space!
+
+== Step 2: Examine Physical Volumes
+
+Let's look at the physical volumes (PVs) in the LVM configuration:
+
+[source,bash,role=execute]
+----
+pvs
+----
+
+Or for more detailed information:
+
+[source,bash,role=execute]
+----
+pvdisplay
+----
+
+The `pvs` command shows a summary, while `pvdisplay` provides detailed information about each physical volume.
+
+== Step 3: Check Volume Groups
+
+Now let's examine the volume groups (VGs):
+
+[source,bash,role=execute]
+----
+vgs
+----
+
+For more details:
+
+[source,bash,role=execute]
+----
+vgdisplay
+----
+
+[IMPORTANT]
+====
+Look at the output carefully. You should see information about:
+- *VG Size*: Total size of the volume group
+- *PE Size*: Physical Extent size (the unit of allocation)
+- *Total PE*: Total number of extents
+- *Alloc PE*: How many extents are allocated
+- *Free PE*: How many extents are still available
+
+But wait... if the PV is only 1GB and the disk is 5GB, where's the rest of the space?
+====
+
+== Step 4: Check Logical Volumes
+
+Let's see the logical volumes:
+
+[source,bash,role=execute]
+----
+lvs
+----
+
+Or with more detail:
+
+[source,bash,role=execute]
+----
+lvdisplay
+----
+
+== The Discovery!
+
+By now, you should have discovered something important:
+
+✓ There's a 5GB physical disk (`/dev/vdb` or similar)
+
+✓ But the physical volume only uses about 1GB of it
+
+✓ The volume group is only 1GB in size
+
+✓ The logical volume has used all available space in the VG
+
+This means Scott created the disk correctly, but only configured 1GB of it for LVM! The remaining ~4GB is just sitting there, unallocated and unused.
+
+[quote, Manager Scott (looking over your shoulder)]
+____
+"What do you mean 'unallocated'? I created a 5GB disk! Are you saying the disk is defective? Should I call the vendor? I have their support number here somewhere..."
+____
+
+*Narrator*: The disk is fine, Scott. The disk is perfectly fine.
+
+== The Solution Path
+
+Now that you understand the problem, the solution is clear:
+
+1. Extend the physical volume to use all available space on the disk
+2. Extend the volume group (it will automatically pick up the new PV space)
+3. Extend the logical volume to use the newly available VG space
+4. Resize the filesystem to use the new LV space
+
+Let's do this in the next sections!

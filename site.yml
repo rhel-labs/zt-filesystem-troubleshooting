@@ -1,0 +1,12 @@
+---
+site:
+  title: Filesystem Troubleshooting and LVM Extension
+  start_page: modules::01-introduction.adoc
+content:
+  sources:
+    - url: ./content
+      branches: HEAD
+      start_path: .
+ui:
+  bundle:
+    url: https://github.com/redhat-scholar/course-ui/releases/latest/download/ui-bundle.zip

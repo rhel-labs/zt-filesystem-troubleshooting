@@ -1,0 +1,23 @@
+# lab-metadata.yml
+# Single Point of Truth for Lab Information
+
+lab:
+  name: "Filesystem Troubleshooting and LVM Extension"
+  shortname: "zt-filesystem-troubleshooting"
+  maintainer: "Nate Lager (nlager@redhat.com)"
+
+  description:
+    summary: "Learn how to troubleshoot and resolve disk space issues using LVM on Red Hat Enterprise Linux"
+    goal: "After completing this scenario, users will be able to identify disk space issues, analyze storage configuration, and extend logical volumes to resolve capacity problems."
+    concepts:
+     - "Identify full filesystems using df and related tools"
+     - "Analyze disk and LVM configuration with lsblk, pvs, vgs, and lvs"
+     - "Extend volume groups to utilize unallocated disk space"
+     - "Extend logical volumes and resize filesystems"
+     - "Understand real-world disk space troubleshooting scenarios"
+    use_case: "In this lab, you'll step into the role of a system administrator at Initech Corporation. Your manager, Scott, has deployed a new application server but 'forgot' to properly size the storage. Now the application filesystem is full and you need to fix it - fast! You'll learn how to identify the problem, find available space on the disk, and extend the LVM volumes to resolve the issue. This mirrors real-world scenarios where applications outgrow their initial storage allocations."
+    time_to_complete: "25"
+
+  git_ref:
+    production: "prod"
+    development: "dev"

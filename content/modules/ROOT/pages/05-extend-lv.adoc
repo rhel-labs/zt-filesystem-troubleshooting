@@ -1,0 +1,188 @@
+= Extending the Logical Volume and Filesystem
+
+== The Final Steps
+
+We've extended the physical volume and the volume group now has plenty of free space. Now we need to:
+
+1. Extend the logical volume to use the available VG space
+2. Resize the filesystem to use the new LV space
+3. Verify everything works
+4. Accept Scott's gratitude (he'll probably claim it was his idea all along)
+
+== Step 1: Check Current Logical Volume Status
+
+Let's see the current state of our logical volume:
+
+[source,bash,role=execute]
+----
+lvs
+----
+
+Note the current size of the logical volume for the `/app` filesystem.
+
+For more details:
+
+[source,bash,role=execute]
+----
+lvdisplay
+----
+
+== Step 2: Extend the Logical Volume
+
+Now let's extend the logical volume to use all available space in the volume group. First, identify the LV path (should be something like `/dev/app_vg/app_lv`):
+
+[source,bash,role=execute]
+----
+lvdisplay | grep "LV Path"
+----
+
+Now extend it to use all available free space:
+
+[source,bash,role=execute]
+----
+lvextend -l +100%FREE /dev/app_vg/app_lv
+----
+
+Let's break down this command:
+
+* `lvextend` - Command to extend a logical volume
+* `-l +100%FREE` - Use 100% of the free space in the volume group
+* `/dev/app_vg/app_lv` - The path to the logical volume
+
+[TIP]
+====
+Alternative options for `lvextend`:
+
+* `-L +4G` - Extend by a specific size (e.g., add 4GB)
+* `-l +100` - Extend by a specific number of extents
+* `-l 100%VG` - Make the LV use 100% of the VG (not recommended in production!)
+====
+
+Verify the logical volume is now larger:
+
+[source,bash,role=execute]
+----
+lvs
+----
+
+== Step 3: Resize the Filesystem
+
+The logical volume is now larger, but the filesystem doesn't know about the new space yet! We need to resize the filesystem to match.
+
+First, let's check what type of filesystem we're using:
+
+[source,bash,role=execute]
+----
+df -T /app
+----
+
+The `-T` flag shows the filesystem type. It's likely XFS (RHEL's default) or ext4.
+
+=== If the filesystem is XFS:
+
+[source,bash,role=execute]
+----
+xfs_growfs /app
+----
+
+The `xfs_growfs` command resizes an XFS filesystem. It will automatically detect the new size and grow to fill it.
+
+=== If the filesystem is ext4:
+
+[source,bash,role=execute]
+----
+resize2fs /dev/app_vg/app_lv
+----
+
+The `resize2fs` command works with ext2/ext3/ext4 filesystems.
+
+[NOTE]
+====
+Both XFS and ext4 filesystems can be resized while mounted and in use! This is another huge advantage of modern Linux filesystems - no downtime required.
+====
+
+== Step 4: Verify the Fix
+
+Let's confirm the filesystem now has the additional space:
+
+[source,bash,role=execute]
+----
+df -h /app
+----
+
+You should now see that `/app` has significantly more available space - approximately 5GB total instead of 1GB!
+
+== Step 5: Test Write Operations
+
+Let's verify the application can now write data:
+
+[source,bash,role=execute]
+----
+echo "Success! The filesystem is no longer full." > /app/test.txt
+----
+
+This should work without errors now. Verify the file was created:
+
+[source,bash,role=execute]
+----
+cat /app/test.txt
+----
+
+Clean up the test file:
+
+[source,bash,role=execute]
+----
+rm /app/test.txt
+----
+
+== Summary: What We Accomplished
+
+Let's review what you did to solve this problem:
+
+✓ *Identified* the full filesystem using `df`
+
+✓ *Investigated* the storage configuration using `lsblk`, `pvs`, `vgs`, and `lvs`
+
+✓ *Discovered* that only 1GB of a 5GB disk was being used
+
+✓ *Extended* the physical volume with `pvresize`
+
+✓ *Extended* the logical volume with `lvextend`
+
+✓ *Resized* the filesystem with `xfs_growfs` (or `resize2fs`)
+
+✓ *Verified* the fix works
+
+All without any downtime or data loss!
+
+== Key Takeaways
+
+This lab taught you several important concepts:
+
+1. **Storage hierarchy**: Understanding the relationship between physical disks, PVs, VGs, LVs, and filesystems
+
+2. **Diagnostic tools**: Using `df`, `lsblk`, `pvs`, `vgs`, and `lvs` to analyze storage configuration
+
+3. **Online expansion**: LVM allows you to expand storage while systems are running
+
+4. **Root cause analysis**: The problem wasn't a bug in the application or a lack of disk - it was a configuration issue
+
+5. **Manager management**: Sometimes the problem is between the keyboard and the chair (but we don't say that out loud)
+
+[quote, Manager Scott]
+____
+"See? I told you it wasn't a big deal. Just a simple configuration adjustment - exactly what I would have done if I had time. Thanks for implementing MY solution! I'll make sure to mention your assistance in my status report."
+____
+
+*Narrator*: Sure, Scott. It was totally your solution.
+
+== Bonus Challenge (Optional)
+
+If you want to practice further, try these additional tasks:
+
+1. Create a new logical volume in the same volume group
+2. Practice reducing the size of a logical volume (WARNING: always backup first in production!)
+3. Explore LVM snapshots for backup purposes
+4. Research LVM thin provisioning for more advanced scenarios
+
+Congratulations on completing this lab! You now have practical experience with LVM troubleshooting and expansion - skills that will serve you well in any Linux administration role.

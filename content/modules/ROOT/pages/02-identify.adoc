@@ -1,0 +1,78 @@
+= Finding the Full Filesystem
+
+== Step 1: Check Overall Disk Usage
+
+The first step in troubleshooting disk space issues is to identify which filesystem is actually full. The `df` command is your best friend here.
+
+Run the following command to display disk space usage:
+
+[source,bash,role=execute]
+----
+df -h
+----
+
+The `-h` flag displays the output in human-readable format (KB, MB, GB instead of bytes).
+
+[NOTE]
+====
+Look for the filesystem mounted at `/app`. You should see it's at or near 100% capacity. This is why the application can't write any new data!
+====
+
+== Understanding the Output
+
+The `df` output shows several columns:
+
+* *Filesystem*: The device or logical volume
+* *Size*: Total size of the filesystem
+* *Used*: Amount of space currently used
+* *Avail*: Available space remaining
+* *Use%*: Percentage of space used
+* *Mounted on*: Where the filesystem is mounted in the directory tree
+
+== Step 2: Verify the Problem
+
+Let's confirm that the `/app` filesystem is indeed full by trying to write a file:
+
+[source,bash,role=execute]
+----
+echo "Test data" > /app/test.txt
+----
+
+You should see an error message indicating that there's no space left on the device.
+
+[source,bash,role=execute]
+----
+cat /app/test.txt
+----
+
+If the write failed, this command will also fail, confirming our problem.
+
+== What About Disk Space Usage?
+
+Let's see what's actually consuming the space in `/app`:
+
+[source,bash,role=execute]
+----
+du -sh /app/*
+----
+
+The `du` (disk usage) command with `-s` (summary) and `-h` (human-readable) flags shows how much space each directory is using.
+
+== The Situation
+
+You've now confirmed:
+
+✓ The `/app` filesystem is full (or nearly full)
+
+✓ The application cannot write new data
+
+✓ Scott's "plenty of disk space" claim was... optimistic
+
+Now you need to figure out where to get more space. But first, let's understand what storage is actually available on this system.
+
+[quote, Manager Scott (overhearing your investigation)]
+____
+"See? I told you it was full! The solution is obvious - just delete some logs or something. I read about that in a blog post once. Or maybe we need to buy a whole new server? I can approve that purchase if needed."
+____
+
+*Narrator*: We will not be deleting production data or buying new hardware. There's a better way.

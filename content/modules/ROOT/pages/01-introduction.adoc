@@ -1,0 +1,44 @@
+= Manager Scott's Emergency
+
+== Welcome to Initech Corporation!
+
+Congratulations on your new role as a System Administrator at Initech Corporation! You've barely had time to get your coffee this morning when your manager, Scott, bursts into your workspace.
+
+[quote, Manager Scott]
+____
+"Hey! I need you to look at something IMMEDIATELY. I deployed our new customer portal application last night - you know, the one I've been working on for months. I did everything myself because, well, I know how these things work. But now the application is throwing errors about being unable to write to disk. Obviously, this must be an application bug, not anything I did wrong. Can you just quickly fix the application code?"
+____
+
+You take a deep breath. From experience, you know that "obvious application bugs" reported by Scott are usually configuration issues. Time to investigate.
+
+== The Situation
+
+Scott has deployed a customer portal application on a RHEL server. The application is supposed to store customer data and logs in the `/app` directory. However, the application is now failing with disk write errors.
+
+Your mission, should you choose to accept it (and you don't really have a choice), is to:
+
+1. Identify the actual problem (spoiler: it's probably not the application code)
+2. Find available resources to solve the issue
+3. Implement a solution without taking the system offline
+4. Do it all while Scott hovers nearby, occasionally suggesting that "back in his day, disks never ran out of space"
+
+== What You'll Learn
+
+In this lab, you'll learn essential skills for troubleshooting disk space issues in a production environment:
+
+* How to identify which filesystems are full
+* How to analyze LVM configuration and available disk space
+* How to extend volume groups and logical volumes
+* How to resize filesystems while they're mounted
+* How to deal with managers who think they know everything (okay, we can't actually teach that)
+
+== Your Environment
+
+You have access to a RHEL server named `rhel`. Scott has assured you that he "provisioned plenty of disk space" and "followed all the best practices he learned from a YouTube video."
+
+Time to get started!
+
+[NOTE]
+====
+Throughout this lab, you'll be using standard RHEL tools for storage management including `df`, `lsblk`, `pvs`, `vgs`, `lvs`, `vgextend`, `lvextend`, and `xfs_growfs` (or `resize2fs` depending on the filesystem type).
+====
