@@ -1,6 +1,3 @@
 ---
-networks:
-  - name: default
-    subnet: 192.168.122.0/24
-    gateway: 192.168.122.1
-    dhcp: true
+# Default network exists by default, specify here always.
+- name: default
