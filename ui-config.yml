@@ -18,6 +18,5 @@ antora:
       label: "Extending the Logical Volume"
       solveButton: true
 tabs:
-  - name: ">_rhel"
-    port: 443
-    path: /tty1
+  - name: ">_ terminal"
+    url: /wetty
