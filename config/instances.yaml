@@ -12,5 +12,5 @@ virtualmachines:
     networks:
       - default
     disks:
-      - name: rhel-app-disk
-        size: 5G
+      - name: "rhel-app-disk"
+        size: "5G"
